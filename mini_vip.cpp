@@ -14,6 +14,8 @@
  * the use of this software.
  */
 
+#include <iostream>
+#include <string>
 #include <stdio.h>
 #include "mini_vip.h"
 #include "metamod_oslink.h"
@@ -111,42 +113,47 @@ bool MiniVIP::LoadVips(char* error, size_t maxlen)
 
 	for (KeyValues* pKey = pKVConfig->GetFirstSubKey(); pKey; pKey = pKey->GetNextKey())
 	{
-		uint32 accontId = V_StringToUint32(pKey->GetName(), 0);
-		if (accontId == 0)
-		{
-			Warning("[%s] accontid is 0\n", GetLogTag());
+		std::string aid{ pKey->GetName() };
+		std::vector<uint32> ids = explode(aid, ',');
 
-			continue;
-		}
-
-		VipPlayer& player = g_VipPlayers[accontId];
-		player.m_iHealth = pKey->GetInt("health", -1);
-		player.m_iArmor = pKey->GetInt("armor", -1);
-		player.m_fGravity = pKey->GetFloat("gravity", 1.f);
-		player.m_iMoneyMin = pKey->GetInt("money_min", -1);
-		player.m_iMoneyAdd = pKey->GetInt("money_add", -1);
-		player.m_bDefuser = pKey->GetBool("defuser", false);
-		if (const char* pszItems = pKey->GetString("items"))
+		for (uint32 id : ids)
 		{
-			V_SplitString(pszItems, " ", player.m_items);
-		}
-		if (!pKey->IsEmpty("smoke_color"))
-		{
-			player.m_vSmokeColor = new Vector();
-			
-			const char* pszSmokeColor = pKey->GetString("smoke_color");
-			if (strcmp(pszSmokeColor, "random") == 0)
+			if (id == 0)
 			{
-				player.m_vSmokeColor->Invalidate();
+				Warning("[%s] accontid is 0\n", GetLogTag());
+
+				continue;
 			}
-			else
-			{
-				Vector& vSmokeColor = *player.m_vSmokeColor;
-				if (sscanf(pszSmokeColor, "%f %f %f", &vSmokeColor.x, &vSmokeColor.y, &vSmokeColor.z) != 3)
-				{
-					Warning("[%s] %u incorrect smoke_color value is specified (%s), must be r g b or random\n", GetLogTag(), accontId, pszSmokeColor);
 
-					delete player.m_vSmokeColor;
+			VipPlayer& player = g_VipPlayers[id];
+			player.m_iHealth = pKey->GetInt("health", -1);
+			player.m_iArmor = pKey->GetInt("armor", -1);
+			player.m_fGravity = pKey->GetFloat("gravity", 1.f);
+			player.m_iMoneyMin = pKey->GetInt("money_min", -1);
+			player.m_iMoneyAdd = pKey->GetInt("money_add", -1);
+			player.m_bDefuser = pKey->GetBool("defuser", false);
+			if (const char* pszItems = pKey->GetString("items"))
+			{
+				V_SplitString(pszItems, " ", player.m_items);
+			}
+			if (!pKey->IsEmpty("smoke_color"))
+			{
+				player.m_vSmokeColor = new Vector();
+
+				const char* pszSmokeColor = pKey->GetString("smoke_color");
+				if (strcmp(pszSmokeColor, "random") == 0)
+				{
+					player.m_vSmokeColor->Invalidate();
+				}
+				else
+				{
+					Vector& vSmokeColor = *player.m_vSmokeColor;
+					if (sscanf(pszSmokeColor, "%f %f %f", &vSmokeColor.x, &vSmokeColor.y, &vSmokeColor.z) != 3)
+					{
+						Warning("[%s] %u incorrect smoke_color value is specified (%s), must be r g b or random\n", GetLogTag(), id, pszSmokeColor);
+
+						delete player.m_vSmokeColor;
+					}
 				}
 			}
 		}
